@@ -3,7 +3,6 @@ package com.balthazargronon.RCTZeroconf;
 import com.balthazargronon.RCTZeroconf.nsd.NsdServiceImpl;
 import com.balthazargronon.RCTZeroconf.rx2dnssd.DnssdImpl;
 import com.facebook.react.bridge.ReactApplicationContext;
-import com.facebook.react.bridge.ReactContext;
 
 import org.apache.commons.lang3.StringUtils;
 

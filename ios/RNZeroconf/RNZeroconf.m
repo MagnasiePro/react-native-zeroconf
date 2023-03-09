@@ -85,8 +85,8 @@ RCT_EXPORT_METHOD(unregisterService:(NSString *) serviceName)
       return;
     }
 
-    NSDictionary *serviceInfo = [RNNetServiceSerializer serializeServiceToDictionary:service resolved:NO];
-    [self.bridge.eventDispatcher sendDeviceEventWithName:@"RNZeroconfFound" body:serviceInfo];
+    // NSDictionary *serviceInfo = [RNNetServiceSerializer serializeServiceToDictionary:service resolved:NO];
+    // [self.bridge.eventDispatcher sendDeviceEventWithName:@"RNZeroconfFound" body:serviceInfo];
 
     // resolving services must be strongly referenced or they will be garbage collected
     // and will never resolve or timeout.

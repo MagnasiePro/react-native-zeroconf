@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.net.wifi.WifiManager;
 import android.util.Log;
+import android.os.Build;
 
 import com.balthazargronon.RCTZeroconf.Zeroconf;
 import com.balthazargronon.RCTZeroconf.ZeroconfModule;
@@ -17,6 +18,7 @@ import com.facebook.react.bridge.WritableNativeMap;
 import com.github.druk.rx2dnssd.BonjourService;
 import com.github.druk.rx2dnssd.Rx2Dnssd;
 import com.github.druk.rx2dnssd.Rx2DnssdBindable;
+import com.github.druk.rx2dnssd.Rx2DnssdEmbedded;
 
 import java.net.InetAddress;
 import java.util.HashMap;
@@ -49,7 +51,11 @@ public class DnssdImpl implements Zeroconf {
         this.reactApplicationContext = reactApplicationContext;
         mPublishedServices = new HashMap<String, BonjourService>();
         mRegisteredDisposables = new HashMap<String, Disposable>();
-        rxDnssd = new Rx2DnssdBindable(reactApplicationContext);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            rxDnssd = new Rx2DnssdEmbedded(reactApplicationContext);
+        } else {
+            rxDnssd = new Rx2DnssdBindable(reactApplicationContext);
+        }
     }
 
     @Override
@@ -57,7 +63,8 @@ public class DnssdImpl implements Zeroconf {
         this.stop();
 
         if (multicastLock == null) {
-            @SuppressLint("WifiManagerLeak") WifiManager wifi = (WifiManager) reactApplicationContext.getSystemService(Context.WIFI_SERVICE);
+            WifiManager wifi = (WifiManager) reactApplicationContext.getApplicationContext()
+                    .getSystemService(Context.WIFI_SERVICE);
             multicastLock = wifi.createMulticastLock("multicastLock");
             multicastLock.setReferenceCounted(true);
             multicastLock.acquire();
@@ -74,7 +81,8 @@ public class DnssdImpl implements Zeroconf {
                     zeroconfModule.sendEvent(reactApplicationContext, ZeroconfModule.EVENT_RESOLVE, service);
                 }, throwable -> {
                     Log.e(getClass().getName(), "Error resolving service: ", throwable);
-                    zeroconfModule.sendEvent(reactApplicationContext, ZeroconfModule.EVENT_ERROR, throwable.getMessage());
+                    zeroconfModule.sendEvent(reactApplicationContext, ZeroconfModule.EVENT_ERROR,
+                            throwable.getMessage());
                 });
     }
 
@@ -105,7 +113,8 @@ public class DnssdImpl implements Zeroconf {
         Map<String, String> attributes = serviceInfo.getTxtRecords();
         for (String key : attributes.keySet()) {
             String recordValue = attributes.get(key);
-            txtRecords.putString(String.format(Locale.getDefault(), "%s", key), String.format(Locale.getDefault(), "%s", recordValue != null ? recordValue : ""));
+            txtRecords.putString(String.format(Locale.getDefault(), "%s", key),
+                    String.format(Locale.getDefault(), "%s", recordValue != null ? recordValue : ""));
         }
 
         service.putMap(ZeroconfModule.KEY_SERVICE_TXT, txtRecords);
@@ -157,7 +166,8 @@ public class DnssdImpl implements Zeroconf {
                     Log.i("TAG", "Register successfully " + bonjourService.toString());
 
                     mPublishedServices.put(bs.getServiceName(), bs);
-                    zeroconfModule.sendEvent(reactApplicationContext, ZeroconfModule.EVENT_PUBLISHED, serviceInfoToMap(bonjourService));
+                    zeroconfModule.sendEvent(reactApplicationContext, ZeroconfModule.EVENT_PUBLISHED,
+                            serviceInfoToMap(bonjourService));
                 }, throwable -> {
                     Log.e("TAG", "error", throwable);
                 });
